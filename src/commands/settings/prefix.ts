@@ -6,6 +6,7 @@ import { config } from "../../PandaBot";
 import { welcomeMessage } from "../../constants/messages";
 import { errorEmbed } from "../../constants/error_embed";
 import { MessageEmbed } from "discord.js";
+import { defaultConfigurationsServer } from "../../constants/default_configurations";
 
 createCommand({
 	name: "prefix",
@@ -25,23 +26,16 @@ createCommand({
 			);
 			embed.setTitle("Argument Error");
 			// @ts-ignore
-			ctx.message.lineReply(embed);
+			sendError(ctx, embed);
 			return;
 		}
 		const server = ServerSchema.findOne(
 			{ server_id: ctx.guildId },
 			(error: CallbackError, record: IServerSchema) => {
 				if (record === null) {
-					const newRecord = new ServerSchema({
-						server_id: ctx.guildId,
-						prefix: prefix === "reset" ? config.PREFIX : (prefix as string),
-						welcome_channel: "",
-						welcome_message: welcomeMessage,
-						use_welcome_message: false,
-						mod_logs: "",
-						use_mod_logs: false,
-					});
-
+					const newRecord = defaultConfigurationsServer;
+					newRecord!.server_id = ctx.guildId as string,
+					newRecord!.prefix = prefix === "reset" ? config.PREFIX : prefix;
 					return newRecord
 						.save()
 						.then(() => {

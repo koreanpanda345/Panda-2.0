@@ -4,6 +4,7 @@ import { config } from "../../PandaBot";
 import { getMember } from "../../utils/resolvers";
 import { errorEmbed } from "../../constants/error_embed";
 import { MessageEmbed, MessageReaction, User, GuildMember, Message } from "discord.js";
+import { sendModLog } from "../../handlers/ModLogsHandler";
 
 createCommand({
 	name: "ban",
@@ -75,11 +76,22 @@ createCommand({
 					ctx.guild?.member(user.id)?.ban({
 						reason: reason,
 						days: days
-					}).then(() => {
+					}).then(async () => {
 						msg.edit(embed).then((m: Message) => {
 							m.delete({
 								timeout: 30000
 							});
+						});
+						const log = new MessageEmbed();
+						log.setTitle("Mod Action: Ban");
+						log.setDescription(`<@${ctx.userId}>  banned <@${user.id}> from the server.`);
+						log.addField("Reason for ban:", reason);
+						log.addField("Time of ban:", msg.createdAt);
+						log.setColor("RED");
+						await sendModLog({
+							type: "ban",
+							serverId: ctx.guildId as string,
+							embed: log
 						});
 						yes.stop();
 					}).catch((error) => {

@@ -4,6 +4,7 @@ import { config } from "../../PandaBot";
 import { getMember } from "../../utils/resolvers";
 import { errorEmbed } from "../../constants/error_embed";
 import { MessageEmbed, MessageReaction, User, GuildMember, Message } from "discord.js";
+import { sendModLog } from "../../handlers/ModLogsHandler";
 
 createCommand({
 	name: "kick",
@@ -73,11 +74,22 @@ createCommand({
 						.setTitle('Kick Confirmed.')
 						.setDescription(`Kicked <@${user.id}>, for reason: \`${reason}\``)
 						.setColor('GREEN');
-					ctx.guild?.member(user.id)?.kick(reason).then(() => {
+					ctx.guild?.member(user.id)?.kick(reason).then(async () => {
 						msg.edit(embed).then((m: Message) => {
 							m.delete({
 								timeout: 30000
 							});
+						});
+						const log = new MessageEmbed();
+						log.setTitle("Mod Action: Kick");
+						log.setDescription(`<@${ctx.userId}> kicked <@${user.id}> from the server.`);
+						log.addField("Reason for kick:", reason);
+						log.addField("Time of kick:", msg.createdAt);
+						log.setColor("ORANGE");
+						await sendModLog({
+							type: "kick",
+							serverId: ctx.guildId as string,
+							embed: log
 						});
 						yes.stop();
 					}).catch((error) => {

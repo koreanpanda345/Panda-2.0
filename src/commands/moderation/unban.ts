@@ -4,6 +4,7 @@ import { config } from "../../PandaBot";
 import { getMember } from "../../utils/resolvers";
 import { errorEmbed } from "../../constants/error_embed";
 import { MessageEmbed, MessageReaction, User, GuildMember, Message } from "discord.js";
+import { sendModLog } from "../../handlers/ModLogsHandler";
 
 createCommand({
 	name: "unban",
@@ -69,11 +70,21 @@ createCommand({
 						.setTitle('Unban Confirmed.')
 						.setDescription(`Banned <@${user.id}>`)
 						.setColor('GREEN');
-					ctx.guild?.members.unban(user).then(() => {
+					ctx.guild?.members.unban(user).then(async () => {
 						msg.edit(embed).then((m: Message) => {
 							m.delete({
 								timeout: 30000
 							});
+						});
+						const log = new MessageEmbed();
+						log.setTitle("Mod Action: Unban");
+						log.setDescription(`<@${ctx.userId}> unbanned <@${user.id}> from the server.`);
+						log.addField("Time of unban:", msg.createdAt);
+						log.setColor("BLUE");
+						await sendModLog({
+							type: "unban",
+							serverId: ctx.guildId as string,
+							embed: log
 						});
 						yes.stop();
 					}).catch((error) => {

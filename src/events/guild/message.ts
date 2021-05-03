@@ -1,10 +1,10 @@
-import { createEvent } from "../../utils/helpers";
+import { createEvent, updateFields } from "../../utils/helpers";
 import { Message } from "discord.js";
-import { config, cache } from "../../PandaBot";
+import { cache } from "../../PandaBot";
 import { CommandContext } from "../../types/CommandContext";
 import ServerSchema, { IServerSchema } from "../../models/schemas/ServerSchema";
 import { CallbackError } from "mongoose";
-import { welcomeMessage } from "../../constants/messages";
+import { defaultConfigurationsServer } from "../../constants/default_configurations";
 
 createEvent({
 	name: "message",
@@ -12,22 +12,20 @@ createEvent({
 		if(message.author.bot || message.channel.type === "dm" || message.channel.type === "news") return;
 		const server = await ServerSchema.findOne({server_id: message.guild?.id}, async (error: CallbackError, record: IServerSchema) => {
 			if(!record) {
-				const newRecord = new ServerSchema({
-					server_id: message.guild?.id,
-					prefix: config.PREFIX,
-					welcome_channel: "",
-					welcome_message: welcomeMessage,
-					use_welcome_message: false,
-					mod_logs: "",
-					use_mod_logs: false,
-				});
-				return newRecord.save().catch((error) => {
+				const newRecord = defaultConfigurationsServer;
+				  
+				return newRecord.save()
+				.then((value) => {
+					console.debug(value);
+				}).catch((error) => {
 					console.error(error);
 				});
 			}
 			return record;
 		});
 
+		
+		console.log(server);
 		const prefix = server!.prefix;
 
 		if(!(message.content.toLowerCase().trim().startsWith(prefix))) return;
@@ -40,6 +38,7 @@ createEvent({
 		if(!command) return;
 		
 		const ctx = new CommandContext(message, args);
+		await updateFields(ctx);
 		let run = true;
 		command.permissions?.user?.forEach((permission) => {
 			if(!ctx.member?.hasPermission(permission)) {
